@@ -1,0 +1,6 @@
+line no 1 of fresh file
+line no 2 to show how to create
+      fresh new file and write content to it
+line no 3 using append method
+awesome right!
+Final Line
