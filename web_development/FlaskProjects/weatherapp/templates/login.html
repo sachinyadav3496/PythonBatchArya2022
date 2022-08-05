@@ -12,6 +12,14 @@
     </div>
 
     <div>
+    <!-- Jinja Templating Engine is used to pass data from python script to templates HTML {} -> Jinja Syntax  -->
+    {% for message in get_flashed_messages() %}
+
+        <h5 style="color:red"> {{ message }}</h5>
+    
+    {% endfor %}
+</div>
+    <div>
         <h3>Please Login to use Weather Application!</h3>
 
         <form method="POST" action="/mk_login">

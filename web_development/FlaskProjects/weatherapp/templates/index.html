@@ -17,6 +17,15 @@
 </div>
 
 <div>
+    {% for message in get_flashed_messages() %}
+
+        <h5 style="color:red"> {{ message }}</h5>
+    
+    {% endfor %}
+</div>
+
+
+<div>
     <input type="text" placeholder="eg. jaipur" required>
     <input type="submit" value="Add City">
 </div>
