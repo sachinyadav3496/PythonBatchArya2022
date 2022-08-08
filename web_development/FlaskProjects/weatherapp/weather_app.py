@@ -16,15 +16,17 @@ def close_db(db, cursor):
     cursor.close()
     db.close()
 
-@app.route("/temp")
-def temp():
-    return render_template("index.html")
-
 @app.route("/")
 def index():
     if "username" in session:
         # it means user is already logged in
-        return render_template("index.html")
+        username = session["username"]
+        db, cursor = get_db()
+        cursor.execute("SELECT * FROM user WHERE username=?", (username,))
+        row = cursor.fetchone()
+        first_name = row[2].title()
+        last_name = row[3].title()
+        return render_template("index.html", first_name=first_name, last_name=last_name)
     return render_template("login.html")
 
 
@@ -37,7 +39,24 @@ def signup():
 def mk_login():
     username = escape(request.form["username"]).lower().strip()
     password = escape(request.form["password"])
-    return f"you are trying to login with {username} {password}"
+    db, cursor = get_db()
+    cursor.execute("SELECT * FROM user WHERE username=?", (username,))
+    row = cursor.fetchone()
+    if row:
+        # row = ('sachin', 'sachin@gmail.com', 'sachin', 'yadav', 'redhat')
+        if password == row[-1]:
+            # user is loogged in
+            session["username"] = username
+            flash(f"!Welcome Back {username}!")
+            return redirect(url_for("index"))
+            # 
+        else:
+            flash("!Incorrect Password! Please Try Again!")
+            return redirect(url_for("index"))
+    else:
+        # row = None
+        flash(f"username {username} does not exists! please signup to create new account")
+        return redirect(url_for("signup"))
 
 @app.route("/mk_signup", methods=["POST"])
 def mk_signup():
@@ -45,47 +64,49 @@ def mk_signup():
     last_name = escape(request.form["lname"]).lower().strip()
     email = escape(request.form["email"]).lower().strip()
     username = escape(request.form["uname"]).lower().strip()
-    password = escape(request.form["password"]).lower().strip()
+    password = escape(request.form["password"])
     # email unique, username unique
     db, cursor = get_db()
-    cursor.execute("SELECT * FROM user WHERE username=? OR email=?", (username, email))
-    # ("sachin", "sachin@gmail.com", "sachin", "yadav", "yahoo")
-    if cursor.fetchone():
-        # account already exists
-        flash("Username or Email already registred with Us!")
-        flash("Choose Different Username or Email to create new account!")
-        
+    cursor.execute("SELECT * FROM user WHERE username=?", (username,))
+    row = cursor.fetchone()
+    # ("sachin", "sachin@gmail.com", "sachin", "yadav", "yahoo"), None
+    if row:
+        flash("!username already exists! please select another username!")
+        return redirect(url_for("signup"))
     else:
-        # account does not exists
-        cursor.execute(
+        cursor.execute("SELECT * FROM user WHERE email=?", (email,))
+        row = cursor.fetchone()
+        if row:
+            flash("!email already exists! please Login!")
+        else:
+            cursor.execute(
             "INSERT INTO user VALUES (?, ?, ?, ?, ?)", 
             (username, email, first_name, last_name, password))
-        db.commit()
-        close_db(db, cursor)
-        flash("Your account has successfully created! Please Login to Continue")
-    
+            db.commit()
+            close_db(db, cursor)
+            flash("Account Created successfully! Please Login to Continue!")
     return redirect(url_for("index"))
-        
-
-
-
-# @app.route("/query/<string:name>")
-# def query(name):
-#     s = ""
-#     for i in range(1, 11):
-#         s += name*i + "<br>"
-#     return s
-
 
 @app.route("/show_all")
 def show_all():
     db, cursor = get_db()
     cursor.execute("SELECT * FROM user")
-    data = cursor.fetchall()
+    users = cursor.fetchall()
+    cursor.execute("SELECT * FROM city")
+    city = cursor.fetchall()
+    data = {"user": users, "city": city}
     close_db(db, cursor)
     return jsonify(data)
 
+@app.route("/logout")
+def logout():
+    if "username" in session:
+        session.pop("username")
+        flash("!logout sucessfully!")
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
     app.run(debug=True)
-    #host=localhost, port=5000
+    # host=localhost, port=5000
+    # ASGI, WSGI, CGI
+    # RBACK - admin
